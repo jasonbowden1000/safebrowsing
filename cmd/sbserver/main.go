@@ -502,8 +502,13 @@ func serveRedirector(resp http.ResponseWriter, req *http.Request, sb *safebrowsi
 	http.Error(resp, err.Error(), http.StatusInternalServerError)
 }
 
-func serveURLSafety(resp http.ResponseWriter, req *http.Request, sb $safebrowsing.SafeBrowser) {
-  rawURL := req.URL.Query().Get("url")
+func serveURLSafety(resp http.ResponseWriter, req *http.Request, sb *safebrowsing.SafeBrowser) {
+	if req.Method != http.MethodPost {
+		http.Error(resp, "Invalid method", http.StatusMethodNotAllowed)
+		return
+	}
+
+  rawURL := req.PostFormValue("url");
   if rawUrl == "" {
     http.Error(resp, "Missing 'url' parameter", http.StatusBadRequest)
     return
@@ -511,7 +516,7 @@ func serveURLSafety(resp http.ResponseWriter, req *http.Request, sb $safebrowsin
 
   threats, err := sb.LookupURLsContext(req.Context(), []string(rawURL))
   if err != nil {
-    http.Error(resp)
+    http.Error(resp, err.Error(), http.StatusInternalServerError)
     return
   }
 
