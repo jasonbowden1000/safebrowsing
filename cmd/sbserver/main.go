@@ -213,6 +213,7 @@ const (
 	findThreatPath     = "/v4/threatMatches:find"
 	getThreatListsPath = "/v4/threatLists"
 	redirectPath       = "/r"
+	isSafePath         = "/v4/isSafe"
 )
 
 const (
@@ -501,6 +502,27 @@ func serveRedirector(resp http.ResponseWriter, req *http.Request, sb *safebrowsi
 	http.Error(resp, err.Error(), http.StatusInternalServerError)
 }
 
+func serveURLSafety(resp http.ResponseWriter, req *http.Request, sb $safebrowsing.SafeBrowser) {
+  rawURL := req.URL.Query().Get("url")
+  if rawUrl == "" {
+    http.Error(resp, "Missing 'url' parameter", http.StatusBadRequest)
+    return
+  }
+
+  threats, err := sb.LookupURLsContext(req.Context(), []string(rawURL))
+  if err != nil {
+    http.Error(resp)
+    return
+  }
+
+  if len(threats[0] == 0) {
+    resp.Write([]byte("URL is safe"))
+    return
+  }
+
+  resp.Write([]byte("URL is not safe"))
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, usage, os.Args[0])
@@ -540,6 +562,9 @@ func main() {
 	http.HandleFunc(redirectPath, func(w http.ResponseWriter, r *http.Request) {
 		serveRedirector(w, r, sb, statikFS)
 	})
+	http.HandleFunc(isSafePath, func(w http.ResponseWriter, r *http.Request) {
+    serveURLSafety(w, r, sb)
+  })
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
 
 	fmt.Fprintln(os.Stdout, "Starting server at", *srvAddrFlag)
