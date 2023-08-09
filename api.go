@@ -23,7 +23,7 @@ import (
 	"net/url"
 	"strings"
 
-	pb "github.com/google/safebrowsing/internal/safebrowsing_proto"
+	pb "github.com/jasonbowden1000/safebrowsing/internal/safebrowsing_proto"
 
 	"github.com/golang/protobuf/proto"
 )
